@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>プロンプト生成サイト</title>
+  <title>ソースコード修正プロンプト生成</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     textarea, pre { width: 100%; box-sizing: border-box; }
@@ -45,7 +45,7 @@
 ${errorText.trim() ? `${errorText.trim()}\n` : ''}
 関連するファイルの内容は以下の通りです。'${path}'
 
-${numbered}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
+${"```\n" + numbered + "\n```"}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
     }
 
     fileInput.addEventListener('change', (e) => {
