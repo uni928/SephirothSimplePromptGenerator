@@ -3,3 +3,5 @@
 [# SephirothSimplePromptGenerator English ver](https://uni928.github.io/SephirothSimplePromptGenerator/index2.html)
 
 簡単な ChatGPT のプロンプト生成サイトです。
+
+A simple ChatGPT prompt generation site.
