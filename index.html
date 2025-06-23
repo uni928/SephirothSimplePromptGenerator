@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ソースコード修正プロンプト生成</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    textarea, pre { width: 100%; box-sizing: border-box; }
+    textarea { height: 100px; margin-bottom: 1em; }
+    pre { background: #f4f4f4; padding: 1em; white-space: pre-wrap; border: 1px solid #ccc; }
+    button { padding: 0.5em 1em; margin-top: 1em; }
+  </style>
+</head>
+<body>
+
+  <h1>ChatGPT用プロンプト生成ツール</h1>
+
+  <label>エラー文：</label>
+  <textarea id="errorInput" placeholder="例：SyntaxError: Unexpected token..."></textarea>
+
+  <label>ファイルを選択：</label>
+  <input type="file" id="fileInput" accept=".js,.ts,.py,.java,.html,.css,.json,.txt" />
+
+  <pre id="fileContent" hidden></pre>
+
+  <h3>生成されたプロンプト：</h3>
+  <pre id="promptOutput"></pre>
+
+  <button id="copyBtn">プロンプトをコピー</button>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileContent = document.getElementById('fileContent');
+    const errorInput = document.getElementById('errorInput');
+    const promptOutput = document.getElementById('promptOutput');
+    const copyBtn = document.getElementById('copyBtn');
+
+    let fileName = '';
+
+    function generatePrompt(errorText, fileText, path) {
+      let numbered = fileText.split('\n').map((line, i) => `${i + 1}: ${line}`).join('\n');
+      return `下記のエラーを解決する方法を教えて頂けますか？
+
+${errorText.trim() ? `${errorText.trim()}\n` : ''}
+関連するファイルの内容は以下の通りです。'${path}'
+
+${numbered}`;
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      fileName = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const text = event.target.result;
+        fileContent.textContent = text;
+        fileContent.hidden = false;
+
+        const prompt = generatePrompt(errorInput.value, text, fileName);
+        promptOutput.textContent = prompt;
+      };
+      reader.readAsText(file);
+    });
+
+    errorInput.addEventListener('input', () => {
+      if (!fileContent.textContent) return;
+      const prompt = generatePrompt(errorInput.value, fileContent.textContent, fileName);
+      promptOutput.textContent = prompt;
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(promptOutput.textContent).then(() => {
+        alert("プロンプトをコピーしました！");
+      });
+    });
+  </script>
+</body>
+</html>
