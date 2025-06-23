@@ -39,12 +39,12 @@
 
     function generatePrompt(errorText, fileText, path) {
       let numbered = fileText.split('\n').map((line, i) => `${i + 1}: ${line}`).join('\n');
-      return `下記のエラーを解決する方法を教えて頂けますか？
+      return `下記のエラーの原因と解決する方法を教えて頂けますか？
 
 ${errorText.trim() ? `${errorText.trim()}\n` : ''}
 関連するファイルの内容は以下の通りです。'${path}'
 
-${numbered}`;
+${numbered}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
     }
 
     fileInput.addEventListener('change', (e) => {
