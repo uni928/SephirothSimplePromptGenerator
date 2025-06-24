@@ -73,7 +73,7 @@
       const fileName = fileInput.files[0]?.name || 'Unknown file name';
       const fileText = fileContentArea.value;
       const errorText = capturedErrors.join('\n');
-      const prompt = `Could you help me understand the cause of the following error(s) and how to fix them?\n\n[Error Message with Line Numbers]\n\n${errorText}\n\nThe relevant file is: '${fileName}'\n\nHere is the content of the file with line numbers:\n\n${fileText}\n\nIf there are any important points or warnings I should be aware of, please include those as well.`;
+      const prompt = `Could you help me understand the cause of the following error(s) and how to fix them?\n\n${errorText}\n\nThe relevant file is: '${fileName}'\n\nHere is the content of the file with line numbers:\n\n${fileText}\n\nIf there are any important points or warnings I should be aware of, please include those as well.`;
       promptArea.value = prompt;
     }
 
