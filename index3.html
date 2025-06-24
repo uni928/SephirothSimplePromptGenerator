@@ -12,7 +12,7 @@
 <body>
   <h1>HTMLファイルを読み込み、エラーをChatGPTプロンプトに変換</h1>
   <input type="file" id="fileInput" accept=".html,.htm">
-  <textarea id="fileContent" readonly placeholder="行番号付きでファイル内容がここに表示されます"></textarea>
+  <textarea id="fileContent" readonly placeholder="ファイル内容がここに表示されます"></textarea>
   <textarea id="prompt" readonly placeholder="生成されたプロンプトがここに表示されます"></textarea>
   <button id="copyButton">プロンプトをコピー</button>
 
@@ -58,7 +58,7 @@
           <script>
             window.onerror = function(message, source, lineno, colno, error) {
               const adjustedLine = ${scriptBaseLine} + lineno - 1;
-              const formattedMessage = message + " (行: " + adjustedLine + ")";
+              const formattedMessage = message;
               parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
             };
           <\/script>
