@@ -73,7 +73,7 @@
       const fileName = fileInput.files[0]?.name || 'ファイル名不明';
       const fileText = fileContentArea.value;
       const errorText = capturedErrors.join('\n');
-      const prompt = `下記のエラーの原因と解決する方法を教えて頂けますか？\n\n${errorText}\n\n関連するファイルの内容は以下の通りです。 '${fileName}'\n\n${fileText}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
+      const prompt = `下記のエラーの原因と解決する方法を教えて頂けますか？\n\n${errorText}\n\n関連するファイルの内容は以下の通りです。 '${fileName}'\n\n${"```"}\n${fileText}\n${"```"}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
       promptArea.value = prompt;
     }
 
