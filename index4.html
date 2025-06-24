@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Generate ChatGPT Prompt from HTML Errors</title>
+  <title>Generate ChatGPT Prompt from HTML</title>
   <style>
     body { font-family: sans-serif; padding: 2em; }
     textarea { width: 100%; height: 200px; margin-top: 1em; }
@@ -10,13 +10,13 @@
   </style>
 </head>
 <body>
-  <h1>Load an HTML File and Convert Errors into a ChatGPT Prompt</h1>
+  <h1>Load an HTML File and Convert it into a ChatGPT Prompt</h1>
   <input type="file" id="fileInput" accept=".html,.htm">
-  <textarea id="fileContent" readonly placeholder="File content will appear here"></textarea>
+  <textarea id="fileContent" readonly placeholder="The file content will appear here"></textarea>
   <textarea id="prompt" readonly placeholder="The generated prompt will appear here"></textarea>
   <button id="copyButton">Copy Prompt</button>
 
-  <iframe id="sandbox" style="display:none;"></iframe>
+  <iframe id="sandbox" style="width:100%; height:0; border:none;"></iframe>
 
   <script>
     const fileInput = document.getElementById('fileInput');
@@ -26,7 +26,6 @@
     const sandbox = document.getElementById('sandbox');
 
     let capturedErrors = [];
-    let scriptBaseLine = 0;
 
     window.addEventListener("message", function(event) {
       if (event.data.type === 'sandbox-error') {
@@ -43,28 +42,27 @@
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        const lines = e.target.result.split('\n');
-        const numberedLines = lines.map((line, i) => `${i + 1}: ${line}`).join('\n');
-
-        fileContentArea.value = numberedLines;
+        const raw = e.target.result;
+        const lines = raw.split('\n');
+        const numbered = lines.map((line, i) => `${i + 1}: ${line}`).join('\n');
+        fileContentArea.value = numbered;
         capturedErrors = [];
 
-        // Find the line number where the first <script> tag appears (1-indexed)
-        scriptBaseLine = lines.findIndex(l => l.includes('<script')) + 1;
+        const wrapped = `
+<!DOCTYPE html>
+<html><head>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      parent.postMessage({ type: 'sandbox-error', message: message + ' (Line: ' + (lineno - 9) + ')' }, '*');
+    };
+  <\/script>
+</head><body>
+${raw}
+</body></html>`;
 
-        const doc = sandbox.contentDocument || sandbox.contentWindow.document;
-        doc.open();
-        doc.write(`
-          <script>
-            window.onerror = function(message, source, lineno, colno, error) {
-              const adjustedLine = ${scriptBaseLine} + lineno - 1;
-              const formattedMessage = message;
-              parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
-            };
-          <\/script>
-          ${e.target.result}
-        `);
-        doc.close();
+        const blob = new Blob([wrapped], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        sandbox.src = url;
       };
       reader.readAsText(file);
     });
@@ -73,7 +71,7 @@
       const fileName = fileInput.files[0]?.name || 'Unknown file name';
       const fileText = fileContentArea.value;
       const errorText = capturedErrors.join('\n');
-      const prompt = `Could you help me understand the cause of the following error(s) and how to fix them?\n\n${errorText}\n\nHere is the content of the file '${fileName}':\n\n${"```"}\n${fileText}\n${"```"}\n\nIf there are any important points or warnings I should be aware of, please include those as well.`;
+      const prompt = `Could you please help me understand the cause of the following error(s) and how to resolve them?\n\n${errorText}\n\nThe related file content is shown below: '${fileName}'\n\n${"```"}\n${fileText}\n${"```"}\n\nIf there are any key points or caveats I should be aware of, please let me know as well.`;
       promptArea.value = prompt;
     }
 
