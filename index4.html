@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Generate ChatGPT Prompt from HTML Errors</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; }
+    textarea { width: 100%; height: 200px; margin-top: 1em; }
+    button { margin-top: 1em; padding: 0.5em 1em; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Load HTML File → Convert Console Errors into a ChatGPT Prompt</h1>
+  <input type="file" id="fileInput" accept=".html,.htm">
+  <textarea id="fileContent" readonly placeholder="File content will appear here with line numbers"></textarea>
+  <textarea id="prompt" readonly placeholder="Generated prompt will appear here"></textarea>
+  <button id="copyButton">Copy Prompt</button>
+
+  <iframe id="sandbox" style="display:none;"></iframe>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileContentArea = document.getElementById('fileContent');
+    const promptArea = document.getElementById('prompt');
+    const copyButton = document.getElementById('copyButton');
+    const sandbox = document.getElementById('sandbox');
+
+    let capturedErrors = [];
+
+    // Hook into console error messages from iframe
+    window.addEventListener("message", function(event) {
+      if (event.data.type === 'sandbox-error') {
+        if (!event.data.message.includes('.css')) {
+          capturedErrors.push(event.data.message);
+          updatePrompt();
+        }
+      }
+    });
+
+    fileInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split('\n');
+        const numberedLines = lines.map((line, i) => `${i + 1}: ${line}`).join('\n');
+
+        fileContentArea.value = numberedLines;
+        capturedErrors = [];
+
+        const doc = sandbox.contentDocument || sandbox.contentWindow.document;
+        doc.open();
+        doc.write(`
+          <script>
+            window.onerror = function(message, source, lineno, colno, error) {
+            const adjustedLine = lineno ? lineno + 16 : lineno;
+            const formattedMessage = adjustedLine ? message + " (Line: " + adjustedLine + ")" : message;
+            parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
+            };
+          <\/script>
+          ${e.target.result}
+        `);
+        doc.close();
+      };
+      reader.readAsText(file);
+    });
+
+    function updatePrompt() {
+      const fileName = fileInput.files[0]?.name || 'Unknown file name';
+      const fileText = fileContentArea.value;
+      const errorText = capturedErrors.join('\n');
+      const prompt = `Could you please help me understand the cause of the following error(s) and how to resolve them?\n\n[Error Message with Line Numbers]\n\n${errorText}\n\nThe relevant file is named: '${fileName}'\n\nHere is the content of the file with line numbers:\n\n${fileText}\n\nPlease also include any key points or things I should watch out for.`;
+      promptArea.value = prompt;
+    }
+
+    copyButton.addEventListener('click', function() {
+      promptArea.select();
+      document.execCommand('copy');
+      alert('Prompt copied to clipboard');
+    });
+  </script>
+</body>
+</html>
