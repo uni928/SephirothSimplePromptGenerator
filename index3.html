@@ -53,7 +53,7 @@
 <html><head>
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
-      parent.postMessage({ type: 'sandbox-error', message: message + ' (Line: ' + (lineno - 9) + ')' }, '*');
+      parent.postMessage({ type: 'sandbox-error', message: message + ' (恐らくLine: ' + (lineno - 9) + ')' }, '*');
     };
   <\/script>
 </head><body>
