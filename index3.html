@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>HTMLエラーからChatGPTプロンプト生成</title>
+  <title>HTMLからChatGPTプロンプト生成</title>
   <style>
     body { font-family: sans-serif; padding: 2em; }
     textarea { width: 100%; height: 200px; margin-top: 1em; }
@@ -10,13 +10,13 @@
   </style>
 </head>
 <body>
-  <h1>HTMLファイルを読み込み、エラーをChatGPTプロンプトに変換</h1>
+  <h1>HTMLファイルを読み込みChatGPTプロンプトに変換</h1>
   <input type="file" id="fileInput" accept=".html,.htm">
   <textarea id="fileContent" readonly placeholder="ファイル内容がここに表示されます"></textarea>
   <textarea id="prompt" readonly placeholder="生成されたプロンプトがここに表示されます"></textarea>
   <button id="copyButton">プロンプトをコピー</button>
 
-  <iframe id="sandbox" style="display:none;"></iframe>
+  <iframe id="sandbox" style="width:100%; height:0; border:none;"></iframe>
 
   <script>
     const fileInput = document.getElementById('fileInput');
@@ -26,7 +26,6 @@
     const sandbox = document.getElementById('sandbox');
 
     let capturedErrors = [];
-    let scriptBaseLine = 0;
 
     window.addEventListener("message", function(event) {
       if (event.data.type === 'sandbox-error') {
@@ -43,28 +42,27 @@
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        const lines = e.target.result.split('\n');
-        const numberedLines = lines.map((line, i) => `${i + 1}: ${line}`).join('\n');
-
-        fileContentArea.value = numberedLines;
+        const raw = e.target.result;
+        const lines = raw.split('\n');
+        const numbered = lines.map((line, i) => `${i + 1}: ${line}`).join('\n');
+        fileContentArea.value = numbered;
         capturedErrors = [];
 
-        // <script>タグのある最初の行番号を取得（1-indexed）
-        scriptBaseLine = lines.findIndex(l => l.includes('<script')) + 1;
+        const wrapped = `
+<!DOCTYPE html>
+<html><head>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      parent.postMessage({ type: 'sandbox-error', message: message + ' (Line: ' + (lineno - 9) + ')' }, '*');
+    };
+  <\/script>
+</head><body>
+${raw}
+</body></html>`;
 
-        const doc = sandbox.contentDocument || sandbox.contentWindow.document;
-        doc.open();
-        doc.write(`
-          <script>
-            window.onerror = function(message, source, lineno, colno, error) {
-              const adjustedLine = ${scriptBaseLine} + lineno - 1;
-              const formattedMessage = message;
-              parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
-            };
-          <\/script>
-          ${e.target.result}
-        `);
-        doc.close();
+        const blob = new Blob([wrapped], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        sandbox.src = url;
       };
       reader.readAsText(file);
     });
