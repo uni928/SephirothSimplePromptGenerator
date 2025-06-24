@@ -12,7 +12,7 @@
 <body>
   <h1>Load an HTML File and Convert Errors into a ChatGPT Prompt</h1>
   <input type="file" id="fileInput" accept=".html,.htm">
-  <textarea id="fileContent" readonly placeholder="File content with line numbers will appear here"></textarea>
+  <textarea id="fileContent" readonly placeholder="File content will appear here"></textarea>
   <textarea id="prompt" readonly placeholder="The generated prompt will appear here"></textarea>
   <button id="copyButton">Copy Prompt</button>
 
@@ -58,7 +58,7 @@
           <script>
             window.onerror = function(message, source, lineno, colno, error) {
               const adjustedLine = ${scriptBaseLine} + lineno - 1;
-              const formattedMessage = message + " (Line: " + adjustedLine + ")";
+              const formattedMessage = message;
               parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
             };
           <\/script>
