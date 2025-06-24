@@ -10,10 +10,10 @@
   </style>
 </head>
 <body>
-  <h1>Load HTML File → Convert Console Errors into a ChatGPT Prompt</h1>
+  <h1>Load an HTML File and Convert Errors into a ChatGPT Prompt</h1>
   <input type="file" id="fileInput" accept=".html,.htm">
-  <textarea id="fileContent" readonly placeholder="File content will appear here with line numbers"></textarea>
-  <textarea id="prompt" readonly placeholder="Generated prompt will appear here"></textarea>
+  <textarea id="fileContent" readonly placeholder="File content with line numbers will appear here"></textarea>
+  <textarea id="prompt" readonly placeholder="The generated prompt will appear here"></textarea>
   <button id="copyButton">Copy Prompt</button>
 
   <iframe id="sandbox" style="display:none;"></iframe>
@@ -26,8 +26,8 @@
     const sandbox = document.getElementById('sandbox');
 
     let capturedErrors = [];
+    let scriptBaseLine = 0;
 
-    // Hook into console error messages from iframe
     window.addEventListener("message", function(event) {
       if (event.data.type === 'sandbox-error') {
         if (!event.data.message.includes('.css')) {
@@ -49,14 +49,17 @@
         fileContentArea.value = numberedLines;
         capturedErrors = [];
 
+        // Find the line number where the first <script> tag appears (1-indexed)
+        scriptBaseLine = lines.findIndex(l => l.includes('<script')) + 1;
+
         const doc = sandbox.contentDocument || sandbox.contentWindow.document;
         doc.open();
         doc.write(`
           <script>
             window.onerror = function(message, source, lineno, colno, error) {
-            const adjustedLine = lineno ? lineno + 16 : lineno;
-            const formattedMessage = adjustedLine ? message + " (Line: " + adjustedLine + ")" : message;
-            parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
+              const adjustedLine = ${scriptBaseLine} + lineno - 1;
+              const formattedMessage = message + " (Line: " + adjustedLine + ")";
+              parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
             };
           <\/script>
           ${e.target.result}
@@ -70,7 +73,7 @@
       const fileName = fileInput.files[0]?.name || 'Unknown file name';
       const fileText = fileContentArea.value;
       const errorText = capturedErrors.join('\n');
-      const prompt = `Could you please help me understand the cause of the following error(s) and how to resolve them?\n\n[Error Message with Line Numbers]\n\n${errorText}\n\nThe relevant file is named: '${fileName}'\n\nHere is the content of the file with line numbers:\n\n${fileText}\n\nPlease also include any key points or things I should watch out for.`;
+      const prompt = `Could you help me understand the cause of the following error(s) and how to fix them?\n\n[Error Message with Line Numbers]\n\n${errorText}\n\nThe relevant file is: '${fileName}'\n\nHere is the content of the file with line numbers:\n\n${fileText}\n\nIf there are any important points or warnings I should be aware of, please include those as well.`;
       promptArea.value = prompt;
     }
 

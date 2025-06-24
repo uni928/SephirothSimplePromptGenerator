@@ -26,6 +26,7 @@
     const sandbox = document.getElementById('sandbox');
 
     let capturedErrors = [];
+    let scriptBaseLine = 0;
 
     window.addEventListener("message", function(event) {
       if (event.data.type === 'sandbox-error') {
@@ -48,13 +49,16 @@
         fileContentArea.value = numberedLines;
         capturedErrors = [];
 
+        // <script>タグのある最初の行番号を取得（1-indexed）
+        scriptBaseLine = lines.findIndex(l => l.includes('<script')) + 1;
+
         const doc = sandbox.contentDocument || sandbox.contentWindow.document;
         doc.open();
         doc.write(`
           <script>
             window.onerror = function(message, source, lineno, colno, error) {
-              const adjustedLine = lineno ? lineno + 16 : lineno;
-              const formattedMessage = adjustedLine ? message + " (行: " + adjustedLine + ")" : message;
+              const adjustedLine = ${scriptBaseLine} + lineno - 1;
+              const formattedMessage = message + " (行: " + adjustedLine + ")";
               parent.postMessage({ type: 'sandbox-error', message: formattedMessage }, '*');
             };
           <\/script>
@@ -69,7 +73,7 @@
       const fileName = fileInput.files[0]?.name || 'ファイル名不明';
       const fileText = fileContentArea.value;
       const errorText = capturedErrors.join('\n');
-      const prompt = `下記のエラーの原因と解決する方法を教えて頂けますか？\n\n${errorText}\n\n関連するファイルの内容は以下の通りです。 '${fileName}'\n\n${fileText}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
+      const prompt = `下記のエラーの原因と解決する方法を教えて頂けますか？\n\n[エラー文（行数付き）]\n\n${errorText}\n\n関連するファイルの内容は以下の通りです。 '${fileName}'\n\n${fileText}\n\nエラーの要点や注意点があればそれも合わせて教えてください。`;
       promptArea.value = prompt;
     }
 
